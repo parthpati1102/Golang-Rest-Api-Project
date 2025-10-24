@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/parthpati1102/Golang-pRest-API-Project/internal/storage"
@@ -55,5 +56,46 @@ func New(storage storage.Storage) http.HandlerFunc {
 		}
 
 		response.Writejson(w, http.StatusCreated, map[string]int64{"id": lastId})
+	}
+}
+
+func GetById(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+
+		slog.Info("Getting a Student", slog.String("Id", id))
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+
+		if err != nil {
+			response.Writejson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		student, err := storage.GetStudentById(intId)
+
+		if err != nil {
+			slog.Error("error getting user", slog.String("id", id))
+			response.Writejson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.Writejson(w, http.StatusOK, student)
+
+	}
+}
+
+func GetList(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Getting ALL Students")
+
+		students, err := storage.GetStudents()
+
+		if err != nil {
+			response.Writejson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.Writejson(w, http.StatusOK, students)
 	}
 }
